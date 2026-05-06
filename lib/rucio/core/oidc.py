@@ -543,18 +543,20 @@ def get_token_oidc(
         if jwt_row_dict['account'].external == 'webui':
             try:
                 jwt_row_dict['account'] = get_default_account(identity_string, IdentityType.OIDC, True, session=session)
-                jwt_row_dict['identity'] = identity_string
             except exception.IdentityError:
                 try:
                     jwt_row_dict['account'] = get_default_account(shared_identity_string, IdentityType.OIDC_ALL, True, session=session)
-                    jwt_row_dict['identity'] = shared_identity_string
                 except Exception:
                     return {'webhome': None, 'token': None}
             except Exception:
                 return {'webhome': None, 'token': None}
 
         # check if given account has the identity registered
-        if not exist_identity_account(jwt_row_dict['identity'], IdentityType.OIDC, jwt_row_dict['account'], session=session) and not exist_identity_account(jwt_row_dict['identity'], IdentityType.OIDC_ALL, jwt_row_dict['account'], session=session):
+        if exist_identity_account(identity_string, IdentityType.OIDC, jwt_row_dict['account'], session=session):
+            jwt_row_dict['identity'] = identity_string
+        elif exist_identity_account(shared_identity_string, IdentityType.OIDC_ALL, jwt_row_dict['account'], session=session):
+            jwt_row_dict['identity'] = shared_identity_string
+        else:
             raise CannotAuthenticate("OIDC identity '%s' of the '%s' account is unknown to Rucio."
                                      % (jwt_row_dict['identity'], str(jwt_row_dict['account'])))
         METRICS.counter(name='success').inc()
@@ -889,14 +891,20 @@ def __get_rucio_jwt_dict(jwt: str, account=None, *, session: "Session"):
             # before to be sure that we do not have the right account already in the DB !
             try:
                 account = get_default_account(identity_string, IdentityType.OIDC, True, session=session)
+                used_identity_string = identity_string
             except exception.IdentityError:
                 account = get_default_account(shared_identity_string, IdentityType.OIDC_ALL, True, session=session)
+                used_identity_string = shared_identity_string
         else:
-            if not exist_identity_account(identity_string, IdentityType.OIDC, account, session=session) and not exist_identity_account(shared_identity_string, IdentityType.OIDC_ALL, account, session = session):
+            if exist_identity_account(identity_string, IdentityType.OIDC, account, session=session):
+                used_identity_string = identity_string
+            elif exist_identity_account(shared_identity_string, IdentityType.OIDC_ALL, account, session = session):
+                used_identity_string = shared_identity_string
+            else:
                 logging.debug("No OIDC identity exists for account: %s", str(account))
                 return None
         value = {'account': account,
-                 'identity': identity_string,
+                 'identity': used_identity_string,
                  'lifetime': expiry_date,
                  'audience': audience,
                  'authz_scope': scope}
@@ -971,7 +979,7 @@ def validate_jwt(json_web_token: str, *, session: "Session") -> dict[str, Any]:
         token_dict: Optional[dict[str, Any]] = __get_rucio_jwt_dict(json_web_token, session=session)
         if not token_dict:
             raise CannotAuthenticate(traceback.format_exc())
-        issuer = token_dict['identity'].split(", ")[1].split("=")[1]
+        issuer = token_dict['identity'].split(", ")[-1].split("=")[1]
         oidc_client = OIDC_CLIENTS[issuer]
         issuer_keys = oidc_client.keyjar.get_issuer_keys(issuer)
         JWS().verify_compact(json_web_token, issuer_keys)
