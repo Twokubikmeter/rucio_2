@@ -898,7 +898,7 @@ def __get_rucio_jwt_dict(jwt: str, account=None, *, session: "Session"):
         else:
             if exist_identity_account(identity_string, IdentityType.OIDC, account, session=session):
                 used_identity_string = identity_string
-            elif exist_identity_account(shared_identity_string, IdentityType.OIDC_ALL, account, session = session):
+            elif exist_identity_account(shared_identity_string, IdentityType.OIDC_ALL, account, session=session):
                 used_identity_string = shared_identity_string
             else:
                 logging.debug("No OIDC identity exists for account: %s", str(account))
