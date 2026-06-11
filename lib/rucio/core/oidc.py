@@ -558,7 +558,7 @@ def get_token_oidc(
             jwt_row_dict['identity'] = shared_identity_string
         else:
             raise CannotAuthenticate("OIDC identity '%s' of the '%s' account is unknown to Rucio."
-                                     % (jwt_row_dict['identity'], str(jwt_row_dict['account'])))
+                                     % (identity_string, str(jwt_row_dict['account'])))
         METRICS.counter(name='success').inc()
         # get access token expiry timestamp
         jwt_row_dict['lifetime'] = datetime.utcnow() + timedelta(seconds=oidc_tokens['expires_in'])
