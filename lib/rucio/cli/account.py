@@ -222,7 +222,7 @@ def limit_list(ctx: click.Context, account_name: str, rse: Optional[str]):
 @limit.command("add")
 @click.argument(
     "account-name",
-)add_identity
+)
 @click.option("--rse", "--rse-name", help="Full RSE name", required=True)  # TODO Separate RSE (local) and RSE Expression (global)
 @click.option("--bytes", "bytes_", help='Value of the limit; can be specified in bytes ("10000"), with a storage unit ("10GB"), or "infinity"', required=True)
 @click.option("--locality", type=click.Choice(["local", "global"]), help="Global or local limit scope", default="local")
