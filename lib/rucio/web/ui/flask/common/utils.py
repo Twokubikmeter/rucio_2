@@ -245,6 +245,14 @@ def access_granted(valid_token_dict, template, title):
     return render_template(template, token=valid_token_dict['token'], account=valid_token_dict['account'], vo=valid_token_dict['vo'], policy=policy, title=title)
 
 
+def get_oidc_identity_type(token):
+    valid_token_dict = validate_webui_token(from_cookie=False, session_token=token)
+    if (valid_token_dict['identity'].split(", ") == 2):
+        return 'OIDC'
+    else:
+        return 'OIDC_ALL'
+
+
 def finalize_auth(token, identity_type, cookie_dict_extra=None):
     """
     Finalises login. Validates provided token, sets cookies
