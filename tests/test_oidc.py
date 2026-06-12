@@ -455,6 +455,7 @@ class TestAuthCoreAPIoidc:
             assert oauth_session_row
             get_token_oidc(auth_init_response['auth_query_string'], session=self.db_session)
         except CannotAuthenticate:
+            assert False # TODO: Remove
             assert "Unknown AuthZ code provided" in traceback.format_exc()
 
     @patch('rucio.core.oidc.__get_init_oidc_client')
