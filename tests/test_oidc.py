@@ -285,6 +285,8 @@ class TestAuthCoreAPIoidc:
         self.accountstring = 'test_' + rndstr()
         self.accountstring = self.accountstring.lower()
         self.account = InternalAccount(self.accountstring, **self.vo)
+        self.other_accountstring = 'test2_' + rndstr()[:-1].lower()
+        self.other_account = InternalAccount(self.other_accountstring, **self.vo)
         self.adminaccountstring = 'admin_' + rndstr()[:-1]  # Too long to use full string
         print("ADMIN ACCOUNT STRING: ", self.adminaccountstring)
         self.adminaccountstring = self.adminaccountstring.lower()
@@ -304,6 +306,7 @@ class TestAuthCoreAPIoidc:
 
         try:
             add_account_identity('SUB=knownsub, ISS=https://test_issuer/', IdentityType.OIDC, self.account, 'rucio_test@test.com', session=self.db_session)
+            add_account_identity('ISS=https://test_issuer/', IdentityType.OIDC_ALL, self.other_account, 'rucio_test@test.com', session=self.db_session)
             add_account_identity('SUB=%s, ISS=https://test_issuer/' % self.adminaccSUB, IdentityType.OIDC, self.adminaccount, 'rucio_test@test.com', session=self.db_session)
             add_account_identity('SUB=%s, ISS=https://test_other_issuer/' % self.adminaccSUB_otherISS, IdentityType.OIDC, self.adminaccount, 'rucio_test@test.com', session=self.db_session)
             add_account_identity('SUB=%s, ISS=https://test_issuer/' % self.adminClientSUB, IdentityType.OIDC, self.adminaccount, 'rucio_test@test.com', session=self.db_session)
@@ -381,6 +384,11 @@ class TestAuthCoreAPIoidc:
             # testing classical CLI login init, expecting user to be
             # redirected via Rucio Auth server to the IdP issuer for login
             auth_url = get_auth_oidc(self.account, session=self.db_session, **kwargs)
+            assert 'https://test_redirect_string/auth/oidc_redirect?' in auth_url and '_polling' not in auth_url
+
+            # testing classical CLI login init using OIDC_ALL, expecting user to be
+            # redirected via Rucio Auth server to the IdP issuer for login
+            auth_url = get_auth_oidc(self.other_account, session=self.db_session, **kwargs)
             assert 'https://test_redirect_string/auth/oidc_redirect?' in auth_url and '_polling' not in auth_url
 
             # testing classical CLI login init, expecting user to be redirected
